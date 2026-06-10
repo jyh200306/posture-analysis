@@ -1,13 +1,25 @@
 export type Direction = 'front' | 'side';
 export type Level = 'good' | 'caution' | 'bad';
-export type ItemKey = 'shoulder' | 'pelvis' | 'spine' | 'neck' | 'balance';
+export type ItemKey = 'shoulder' | 'pelvis' | 'neck' | 'back' | 'waist' | 'spine';
+
+/** 촬영 방향별 측정 항목 — 정면은 좌우 균형, 측면은 앞뒤 굽음을 본다 */
+export const DIRECTION_ITEMS: Record<Direction, ItemKey[]> = {
+  front: ['shoulder', 'pelvis', 'neck'],
+  side: ['neck', 'back', 'waist', 'spine'],
+};
+
+export const DIRECTION_LABELS: Record<Direction, string> = {
+  front: '정면',
+  side: '측면',
+};
 
 export const ITEM_LABELS: Record<ItemKey, string> = {
   shoulder: '어깨 수평',
   pelvis: '골반 수평',
-  spine: '척추 정렬',
   neck: '목 정렬',
-  balance: '무게중심',
+  back: '등 굽음',
+  waist: '허리 정렬',
+  spine: '척추 굽음',
 };
 
 export const LEVEL_LABELS: Record<Level, string> = {
@@ -50,7 +62,7 @@ export interface AnalysisResult {
   createdAt: string; // ISO-8601
   direction: Direction;
   overallScore: number;
-  items: Record<ItemKey, ItemScore>;
+  items: Partial<Record<ItemKey, ItemScore>>; // 방향에 따라 측정 항목이 다르다
   keypoints: Keypoint[];
   feedback: Feedback;
 }
@@ -61,5 +73,5 @@ export interface AnalysisRecord {
   createdAt: string;
   direction: Direction;
   overallScore: number;
-  items: Record<ItemKey, ItemScore>;
+  items: Partial<Record<ItemKey, ItemScore>>;
 }

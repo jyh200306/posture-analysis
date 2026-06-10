@@ -2,7 +2,7 @@ import { TrendChart } from '../components/TrendChart';
 import type { AnalysisRecord, ItemKey } from '../types';
 import { ITEM_LABELS } from '../types';
 
-const ITEM_ORDER: ItemKey[] = ['shoulder', 'pelvis', 'spine', 'neck', 'balance'];
+const ITEM_ORDER: ItemKey[] = ['shoulder', 'pelvis', 'neck', 'back', 'waist', 'spine'];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Props {
@@ -42,12 +42,16 @@ export function History({ records, onClear, onAnalyze }: Props) {
       ? Math.round(recent.reduce((sum, r) => sum + r.overallScore, 0) / recent.length)
       : null;
 
-  // 항목별 평균 점수 — 가장 낮은 항목을 강조한다
-  const averages = ITEM_ORDER.map((key) => ({
-    key,
-    avg: Math.round(records.reduce((sum, r) => sum + r.items[key].score, 0) / records.length),
-  }));
-  const lowestKey = averages.reduce((min, a) => (a.avg < min.avg ? a : min)).key;
+  // 항목별 평균 점수 — 방향에 따라 측정 항목이 다르므로 해당 항목이 있는 기록만 집계한다
+  const averages = ITEM_ORDER.flatMap((key) => {
+    const scores = records
+      .map((r) => r.items[key]?.score)
+      .filter((s): s is number => s !== undefined);
+    if (scores.length === 0) return [];
+    return [{ key, avg: Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) }];
+  });
+  const lowestKey =
+    averages.length > 0 ? averages.reduce((min, a) => (a.avg < min.avg ? a : min)).key : null;
 
   function handleClear() {
     if (window.confirm('모든 분석 기록을 삭제할까요? 되돌릴 수 없습니다.')) onClear();

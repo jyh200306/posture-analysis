@@ -1,10 +1,8 @@
 import { ScoreRing } from '../components/ScoreRing';
 import { SkeletonOverlay } from '../components/SkeletonOverlay';
 import { LevelTag } from '../components/LevelTag';
-import type { AnalysisResult, ItemKey } from '../types';
-import { ITEM_LABELS } from '../types';
-
-const ITEM_ORDER: ItemKey[] = ['shoulder', 'pelvis', 'spine', 'neck', 'balance'];
+import type { AnalysisResult } from '../types';
+import { DIRECTION_ITEMS, DIRECTION_LABELS, ITEM_LABELS } from '../types';
 
 interface Props {
   result: AnalysisResult;
@@ -50,16 +48,17 @@ export function Result({
       </div>
 
       <div className="section score-section">
-        <p className="label">Overall Score — 종합 점수</p>
+        <p className="label">Overall Score — {DIRECTION_LABELS[result.direction]} 종합 점수</p>
         <ScoreRing score={result.overallScore} />
         {delta && <p className="caption num">{delta}</p>}
       </div>
 
       <div className="section">
-        <p className="label">Items — 항목별 측정</p>
+        <p className="label">Items — {DIRECTION_LABELS[result.direction]} 측정 항목</p>
         <div className="item-list">
-          {ITEM_ORDER.map((key) => {
+          {DIRECTION_ITEMS[result.direction].map((key) => {
             const item = result.items[key];
+            if (!item) return null;
             return (
               <div className="item-row" key={key}>
                 <div>
@@ -87,7 +86,7 @@ export function Result({
           <div className="feedback-area" key={area.key}>
             <div className="feedback-area-head">
               <span className="heading">{area.title}</span>
-              <LevelTag level={result.items[area.key].level} />
+              <LevelTag level={result.items[area.key]!.level} />
             </div>
             <p className="feedback-state">{area.state}</p>
             <ol className="feedback-actions">

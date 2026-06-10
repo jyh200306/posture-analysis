@@ -17,12 +17,20 @@ interface Props {
   onComplete: (output: AnalyzeOutput) => void;
 }
 
-const STEPS = [
-  '관절점을 찾고 있습니다',
-  '좌우 균형을 측정하고 있습니다',
-  '점수를 계산하고 있습니다',
-  '피드백을 작성하고 있습니다',
-];
+const STEPS: Record<Direction, string[]> = {
+  front: [
+    '관절점을 찾고 있습니다',
+    '좌우 균형을 측정하고 있습니다',
+    '점수를 계산하고 있습니다',
+    '피드백을 작성하고 있습니다',
+  ],
+  side: [
+    '관절점을 찾고 있습니다',
+    '굽은 정도를 측정하고 있습니다',
+    '점수를 계산하고 있습니다',
+    '피드백을 작성하고 있습니다',
+  ],
+};
 
 const MIN_WIDTH = 480; // PRD RULE-002
 const MIN_HEIGHT = 640;
@@ -40,7 +48,7 @@ export function Analyze({ imageUrl, onCancel, onComplete }: Props) {
     if (phase !== 'loading') return;
     setStepIndex(0);
     const timer = setInterval(
-      () => setStepIndex((i) => Math.min(i + 1, STEPS.length - 1)),
+      () => setStepIndex((i) => Math.min(i + 1, STEPS[direction].length - 1)),
       1000,
     );
     return () => clearInterval(timer);
@@ -69,7 +77,7 @@ export function Analyze({ imageUrl, onCancel, onComplete }: Props) {
         return;
       }
 
-      const scored = scorePose(pose, img.naturalWidth, img.naturalHeight);
+      const scored = scorePose(pose, img.naturalWidth, img.naturalHeight, direction);
       onComplete({
         ...scored,
         direction,
@@ -92,7 +100,7 @@ export function Analyze({ imageUrl, onCancel, onComplete }: Props) {
       <div className="screen fade-in">
         <div className="loading">
           <p className="label">Analyzing</p>
-          <p className="heading">{STEPS[stepIndex]}</p>
+          <p className="heading">{STEPS[direction][stepIndex]}</p>
           <div className="loading-bar" />
           <p className="caption">최초 분석은 AI 모델 다운로드로 몇 초 더 걸릴 수 있습니다</p>
         </div>
@@ -120,7 +128,11 @@ export function Analyze({ imageUrl, onCancel, onComplete }: Props) {
         <img src={imageUrl} alt="분석할 사진 미리보기" />
       </div>
       <div className="section stack">
-        <p className="caption">촬영 방향을 선택하세요. 측면 사진일수록 목 측정이 정확합니다.</p>
+        <p className="caption">
+          {direction === 'front'
+            ? '정면 사진은 어깨 수평 · 골반 수평 · 목 정렬을 측정합니다.'
+            : '측면 사진은 목 · 등 · 허리 · 척추의 굽은 정도를 측정합니다.'}
+        </p>
         <div className="toggle">
           <button
             className={direction === 'front' ? 'active' : ''}

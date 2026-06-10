@@ -58,7 +58,12 @@ export default function App() {
       overallScore: output.overallScore,
       items: output.items,
       keypoints: output.keypoints,
-      feedback: buildFeedback(output.items, output.overallScore, previous?.overallScore ?? null),
+      feedback: buildFeedback(
+        output.items,
+        output.direction,
+        output.overallScore,
+        previous?.overallScore ?? null,
+      ),
     };
     saveRecord({
       id: result.id,

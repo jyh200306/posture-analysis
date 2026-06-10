@@ -47,8 +47,8 @@ export function Home({ lastRecord, onPick, onHistory }: Props) {
           자세를 측정합니다
         </h1>
         <p className="body-text">
-          전신이 나온 사진을 올리면 관절 17곳을 감지해 어깨 · 골반 · 척추 · 목 · 무게중심을
-          채점합니다.
+          전신이 나온 사진을 올리면 관절 17곳을 감지해 채점합니다. 정면 사진은 어깨 · 골반 · 목의
+          좌우 균형을, 측면 사진은 목 · 등 · 허리 · 척추의 굽은 정도를 측정합니다.
         </p>
       </div>
 

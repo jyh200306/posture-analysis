@@ -12,10 +12,12 @@ export interface Point {
 }
 
 export interface PoseData {
-  /** PRD 정의 17개 관절점 (배열 인덱스 = 관절 id) */
+  /** 17개 관절점 (배열 인덱스 = 관절 id) — 오버레이 렌더링용 */
   keypoints: Keypoint[];
-  /** 귀 위치 — 목 전방 경사 계산용 (PRD 17개에는 없지만 측정에 필요) */
+  /** 귀 위치 — 목 전방 정렬 측정용 */
   ear: Point;
+  earL: Point;
+  earR: Point;
 }
 
 let landmarkerPromise: Promise<PoseLandmarker> | null = null;
@@ -30,6 +32,13 @@ function getLandmarker(): Promise<PoseLandmarker> {
     }),
   );
   return landmarkerPromise;
+}
+
+/** 사용자가 기다리기 전에 모델을 미리 받아둔다 (실패해도 분석 시 재시도) */
+export function preloadModel(): void {
+  getLandmarker().catch(() => {
+    landmarkerPromise = null;
+  });
 }
 
 // MediaPipe BlazePose 33개 관절 중 사용하는 인덱스
@@ -68,7 +77,7 @@ function lerp(a: Point, b: Point, t: number): Point {
 }
 
 /**
- * 이미지에서 자세를 감지해 PRD 17개 관절점으로 변환한다.
+ * 이미지에서 자세를 감지해 17개 관절점으로 변환한다.
  * 사람이 감지되지 않거나 몸통 신뢰도가 낮으면 null을 반환한다.
  */
 export async function detectPose(image: HTMLImageElement): Promise<PoseData | null> {
@@ -91,7 +100,7 @@ export async function detectPose(image: HTMLImageElement): Promise<PoseData | nu
   const neck = mid(shoulderL, shoulderR);
   const hipMid = mid(hipL, hipR);
 
-  // 몸통(어깨·골반)이 제대로 안 보이면 분석 불가로 처리 (RULE-003)
+  // 몸통(어깨·골반)이 제대로 안 보이면 분석 불가로 처리
   const coreConfidence =
     (shoulderL.confidence + shoulderR.confidence + hipL.confidence + hipR.confidence) / 4;
   if (coreConfidence < 0.5) return null;
@@ -122,5 +131,7 @@ export async function detectPose(image: HTMLImageElement): Promise<PoseData | nu
   return {
     keypoints: points.map(([label, p], id) => ({ id, label, ...p })),
     ear: earL.confidence >= earR.confidence ? earL : earR,
+    earL,
+    earR,
   };
 }

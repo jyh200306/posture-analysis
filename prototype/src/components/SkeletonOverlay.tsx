@@ -1,13 +1,16 @@
-import type { Keypoint } from '../types';
+import type { Direction, Keypoint } from '../types';
 
 interface Props {
   keypoints: Keypoint[];
+  direction: Direction;
   /** 원본 이미지 픽셀 크기 (viewBox 좌표계) */
   imageWidth: number;
   imageHeight: number;
+  /** 측면 분석 시 귀 위치 — 정렬선과 함께 표시 */
+  ear?: { x: number; y: number; confidence: number };
 }
 
-// 관절 연결 쌍 (PRD 17개 관절 id 기준)
+// 관절 연결 쌍 (17개 관절 id 기준)
 const CONNECTIONS: Array<[number, number]> = [
   [0, 1], // 머리–목
   [1, 2], // 목–왼어깨
@@ -29,23 +32,35 @@ const CONNECTIONS: Array<[number, number]> = [
 
 const MIN_CONFIDENCE = 0.5;
 
-/** 흑백 사진 위에 흰 골격 라인을 SVG로 렌더링한다. (스타일 규칙: DESIGN.md 6장) */
-export function SkeletonOverlay({ keypoints, imageWidth, imageHeight }: Props) {
-  const px = (p: Keypoint) => ({ x: p.x * imageWidth, y: p.y * imageHeight });
+/**
+ * 사진 위에 관절 골격과 수직 정렬 기준선을 렌더링한다.
+ * 기준선은 운동학의 정적 자세 평가에서 쓰는 수직선 —
+ * 발목 중점을 지나는 수직선에 귀·어깨·골반이 얼마나 가까운지가 정렬의 핵심이다.
+ */
+export function SkeletonOverlay({ keypoints, direction, imageWidth, imageHeight, ear }: Props) {
+  const px = (p: { x: number; y: number }) => ({ x: p.x * imageWidth, y: p.y * imageHeight });
   const dotRadius = Math.max(imageWidth, imageHeight) * 0.008;
+
+  // 수직 기준선: 발목이 보이면 발목 중점, 아니면 골반 중점을 지난다
+  const ankleL = keypoints[14];
+  const ankleR = keypoints[15];
+  const anklesVisible = ankleL.confidence >= MIN_CONFIDENCE || ankleR.confidence >= MIN_CONFIDENCE;
+  const base = anklesVisible
+    ? px({ x: (ankleL.x + ankleR.x) / 2, y: (ankleL.y + ankleR.y) / 2 })
+    : px(keypoints[16]);
 
   return (
     <svg viewBox={`0 0 ${imageWidth} ${imageHeight}`} preserveAspectRatio="xMidYMid meet">
-      {/* 중앙 수직 기준선 */}
+      {/* 수직 정렬 기준선 */}
       <line
-        x1={imageWidth / 2}
+        x1={base.x}
         y1={0}
-        x2={imageWidth / 2}
+        x2={base.x}
         y2={imageHeight}
         stroke="#fff"
         strokeWidth={1}
         strokeDasharray="6 6"
-        opacity={0.7}
+        opacity={0.75}
         vectorEffect="non-scaling-stroke"
       />
 
@@ -63,6 +78,28 @@ export function SkeletonOverlay({ keypoints, imageWidth, imageHeight }: Props) {
           </g>
         );
       })}
+
+      {/* 측면: 귀-어깨 정렬선 — 목 전방 정렬 측정의 근거를 그대로 보여준다 */}
+      {direction === 'side' && ear && ear.confidence >= MIN_CONFIDENCE && (
+        <g>
+          <line
+            {...lineProps(px(ear), px(keypoints[1]))}
+            stroke="#fff"
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            opacity={0.9}
+          />
+          <circle
+            cx={px(ear).x}
+            cy={px(ear).y}
+            r={dotRadius * 1.2}
+            fill="none"
+            stroke="#fff"
+            strokeWidth={2}
+            vectorEffect="non-scaling-stroke"
+          />
+        </g>
+      )}
 
       {keypoints.map((p) => {
         if (p.confidence < MIN_CONFIDENCE) return null;

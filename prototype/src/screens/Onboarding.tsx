@@ -4,8 +4,7 @@ import type { Goal, Profile } from '../types';
 import { GOAL_LABELS } from '../types';
 
 const DISCLAIMER =
-  '워크모션의 자세 분석은 AI 기술 기반 참고 정보이며, 의료적 진단이 아닙니다. 만성 통증이나 질환이 있는 경우
-   의료 전문가와 상담하세요.';
+  '워크모션의 자세 분석은 AI 기술 기반 참고 정보이며, 의료적 진단이 아닙니다. 만성 통증이나 질환이 있는 경우 의료 전문가와 상담하세요.';
 
 interface Props {
   onDone: (profile: Profile) => void;
@@ -36,9 +35,7 @@ export function Onboarding({ onDone }: Props) {
             데이터로 관리하다
           </h1>
           <p className="body-text">
-            사진 한 장이면 충분합니다.
-            당신에게 필요한 교정 루틴을 만들어
-            매일 함께합니다.
+            사진 한 장이면 충분합니다. 워크모션이 당신에게 필요한 교정 루틴을 만들어 매일 함께합니다.
           </p>
         </div>
         <div className="onboard-foot">
@@ -70,18 +67,14 @@ export function Onboarding({ onDone }: Props) {
               <span className="step-no num">1</span>
               <div>
                 <p className="heading">정렬 측정</p>
-                <p className="caption">
-                  관절 17곳을 인식해 어깨·골반·목의 정렬을 각도로 측정
-                </p>
+                <p className="caption">관절 17곳을 인식해 어깨·골반·목의 정렬을 각도로 측정합니다</p>
               </div>
             </li>
             <li>
               <span className="step-no num">2</span>
               <div>
                 <p className="heading">맞춤 루틴</p>
-                <p className="caption">
-                  가장 약한 영역을 찾아 하루 10분 안팎의 교정 운동 처방
-                </p>
+                <p className="caption">가장 약한 영역을 찾아 하루 10분 안팎의 교정 운동을 처방합니다</p>
               </div>
             </li>
             <li>
@@ -92,9 +85,7 @@ export function Onboarding({ onDone }: Props) {
               </div>
             </li>
           </ol>
-          <p className="caption">
-            사진은 기기 안에서만 분석되고 외부로 전송되거나 저장되지 않습니다.
-          </p>
+          <p className="caption">사진은 기기 안에서만 분석되고 외부로 전송되거나 저장되지 않습니다.</p>
         </div>
         <div className="onboard-foot">
           <div className="dots">

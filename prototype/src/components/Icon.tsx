@@ -5,6 +5,7 @@ export type IconName =
   | 'scan'
   | 'activity'
   | 'chart'
+  | 'report'
   | 'sliders'
   | 'camera'
   | 'image'
@@ -41,6 +42,14 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M5 20v-7" />
       <path d="M12 20V5.5" />
       <path d="M19 20v-10" />
+    </>
+  ),
+  report: (
+    <>
+      <path d="M6 3.5h8.5L18 7v13.5H6Z" />
+      <path d="M14 3.5V7h3.5" />
+      <path d="M8.5 12h6" />
+      <path d="M8.5 15.5h6" />
     </>
   ),
   sliders: (

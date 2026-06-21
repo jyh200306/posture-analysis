@@ -11,6 +11,7 @@ import { Result } from './screens/Result';
 import { Coach } from './screens/Coach';
 import { History } from './screens/History';
 import { Settings } from './screens/Settings';
+import { BodyReport, MOCK_BODY_REPORT } from './screens/BodyReport';
 import { classifyPattern } from './lib/scoring';
 import { buildRoutine } from './lib/routine';
 import type { Point } from './lib/pose';
@@ -50,6 +51,7 @@ export default function App() {
   const [streak, setStreak] = useState(streakDays);
   const [view, setView] = useState<ResultView | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [freshRoutine, setFreshRoutine] = useState(false);
 
   function closeResult() {
     if (view) URL.revokeObjectURL(view.imageUrl);
@@ -92,6 +94,7 @@ export default function App() {
     saveRoutine(next);
     setRoutine(next);
     closeResult();
+    setFreshRoutine(true);
     setTab('coach');
   }
 
@@ -133,11 +136,12 @@ export default function App() {
   if (view) {
     return (
       <div className="app">
-        <header className="header">
-          <Logo size={24} />
-          <button className="icon-btn" onClick={closeResult} aria-label="닫기">
-            <Icon name="close" size={20} />
+        <header className="header header-centered">
+          <button className="icon-btn" onClick={closeResult} aria-label="뒤로">
+            <Icon name="back" size={22} />
           </button>
+          <Logo size={24} />
+          <span className="header-spacer" />
         </header>
         <Result
           {...view}
@@ -168,7 +172,13 @@ export default function App() {
   return (
     <div className="app with-tabbar">
       <header className="header">
-        <Logo size={24} />
+        {tab !== 'home' ? (
+          <button className="icon-btn" onClick={() => setTab('home')} aria-label="홈으로">
+            <Icon name="back" size={22} />
+          </button>
+        ) : (
+          <Logo size={24} />
+        )}
         <button className="icon-btn" onClick={() => setSettingsOpen(true)} aria-label="설정">
           <Icon name="sliders" size={20} />
         </button>
@@ -187,12 +197,15 @@ export default function App() {
         />
       )}
       {tab === 'analyze' && <Analyze onComplete={handleAnalyzed} />}
+      {tab === 'report' && <BodyReport data={MOCK_BODY_REPORT} userName={profile.name} />}
       {tab === 'coach' && (
         <Coach
           routine={routine}
           todayLog={todayLog}
           streak={streak}
           activeDays={activeDaysThisWeek()}
+          profileName={profile.name}
+          freshRoutine={freshRoutine}
           onToggleDone={handleToggleDone}
           onAnalyze={() => setTab('analyze')}
         />
@@ -205,7 +218,7 @@ export default function App() {
         />
       )}
 
-      <TabBar active={tab} onChange={setTab} />
+      <TabBar active={tab} onChange={(t) => { setFreshRoutine(false); setTab(t); }} />
     </div>
   );
 }

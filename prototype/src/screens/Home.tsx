@@ -49,7 +49,7 @@ function Sparkline({ scores }: { scores: number[] }) {
       <polyline
         points={pts}
         fill="none"
-        stroke="var(--ink)"
+        stroke="var(--primary)"
         strokeWidth={1.6}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -139,7 +139,7 @@ export function Home({
       {routine && (
         <button className="card card-tappable" onClick={onCoach}>
           <div className="card-head">
-            <span className="card-label">오늘의 루틴</span>
+            <span className="card-label">오늘의 스트레칭</span>
             {streak > 0 && (
               <span className="streak num">
                 <Icon name="flame" size={15} />

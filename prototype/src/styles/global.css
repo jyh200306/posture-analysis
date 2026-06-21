@@ -1,11 +1,15 @@
 /* ---------- 디자인 토큰 ---------- */
 :root {
-  --ink: #111111;
-  --ink-soft: #555555;
-  --ink-faint: #979797;
-  --paper: #ffffff;
-  --paper-dim: #f6f6f5;
-  --line: #e6e6e4;
+  --ink: #2C2C2A;
+  --ink-soft: #888780;
+  --ink-faint: #AEAD9E;
+  --paper: #FAF6EF;
+  --paper-dim: #F3EDE3;
+  --line: #E2D9CC;
+  --primary: #D85A30;
+  --primary-hover: #C24E26;
+  --secondary: #1D9E75;
+  --warning: #854F0B;
   --radius: 14px;
   --radius-sm: 12px;
   --font:
@@ -20,7 +24,7 @@
 }
 
 html {
-  background: #fafafa;
+  background: var(--paper-dim);
 }
 
 body {
@@ -30,6 +34,8 @@ body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.005em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 button {
@@ -91,9 +97,21 @@ input {
   justify-content: space-between;
   align-items: center;
   padding: 14px 20px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(250, 246, 239, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
+}
+
+.header-centered {
+  justify-content: space-between;
+}
+.header-centered .logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.header-spacer {
+  width: 40px;
 }
 
 .logo {
@@ -131,7 +149,7 @@ input {
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
   transition: background 0.15s ease;
 }
 
@@ -148,8 +166,8 @@ input {
   width: 100%;
   max-width: 480px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  background: rgba(255, 255, 255, 0.94);
+  grid-template-columns: repeat(5, 1fr);
+  background: rgba(250, 246, 239, 0.94);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--line);
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
@@ -220,9 +238,9 @@ input {
 }
 
 .caption {
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.55;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .num {
@@ -251,12 +269,12 @@ input {
 }
 
 .btn-primary {
-  background: var(--ink);
+  background: var(--primary);
   color: var(--paper);
 }
 
 .btn-primary:hover {
-  background: #000;
+  background: var(--primary-hover);
 }
 
 .btn-primary:disabled {
@@ -267,7 +285,7 @@ input {
 
 .btn-secondary {
   background: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
 }
 
 .btn-secondary:hover {
@@ -339,9 +357,9 @@ input {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--ink);
+  background: var(--primary);
   color: var(--paper);
-  border-color: var(--ink);
+  border-color: var(--primary);
 }
 
 .card-cta > * + * {
@@ -349,7 +367,7 @@ input {
 }
 
 .card-cta .caption {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .card-cta:active {
@@ -363,7 +381,7 @@ input {
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.20);
   flex-shrink: 0;
 }
 
@@ -423,7 +441,7 @@ input {
 .progress-fill {
   height: 100%;
   border-radius: 3px;
-  background: var(--ink);
+  background: var(--secondary);
   transition: width 0.4s ease-out;
 }
 
@@ -466,7 +484,7 @@ input {
 }
 
 .dot.active {
-  background: var(--ink);
+  background: var(--primary);
 }
 
 .onboard-steps {
@@ -490,7 +508,7 @@ input {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
   font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
@@ -520,7 +538,7 @@ input {
 }
 
 .input:focus {
-  border-color: var(--ink);
+  border-color: var(--primary);
 }
 
 .choice-list {
@@ -542,8 +560,8 @@ input {
 }
 
 .choice.active {
-  border-color: var(--ink);
-  background: var(--ink);
+  border-color: var(--primary);
+  background: var(--primary);
   color: var(--paper);
 }
 
@@ -570,12 +588,12 @@ input {
 .check-row input {
   width: 17px;
   height: 17px;
-  accent-color: var(--ink);
+  accent-color: var(--primary);
 }
 
 /* ---------- 알림 ---------- */
 .banner {
-  background: var(--ink);
+  background: var(--primary);
   color: var(--paper);
   font-size: 12px;
   padding: 9px 22px;
@@ -591,6 +609,25 @@ input {
   border: 1px solid var(--line);
 }
 
+.fresh-routine-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 22px 16px;
+  background: var(--primary);
+  color: var(--paper);
+}
+
+.fresh-routine-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fresh-routine-banner .caption {
+  color: rgba(255, 255, 255, 0.75);
+}
+
 .notice-done {
   display: flex;
   align-items: center;
@@ -598,7 +635,7 @@ input {
   margin: 12px 22px 0;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: var(--ink);
+  background: var(--secondary);
   color: var(--paper);
   font-size: 13.5px;
   font-weight: 550;
@@ -669,7 +706,7 @@ input {
   font-size: 13px;
   font-weight: 650;
   padding: 7px 14px;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
   border-radius: 999px;
 }
 
@@ -711,7 +748,7 @@ input {
   text-align: right;
 }
 
-/* ---------- 상태 태그 — 모노크롬 인코딩 ---------- */
+/* ---------- 상태 태그 ---------- */
 .tag {
   display: inline-block;
   font-size: 11px;
@@ -723,7 +760,8 @@ input {
 }
 
 .tag-good {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
 }
 
 .tag-caution {
@@ -731,7 +769,7 @@ input {
 }
 
 .tag-bad {
-  background: var(--ink);
+  background: var(--primary);
   color: var(--paper);
 }
 
@@ -758,7 +796,7 @@ input {
 /* ---------- 토글 / 세그먼트 ---------- */
 .toggle {
   display: flex;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -775,7 +813,7 @@ input {
 }
 
 .toggle button.active {
-  background: var(--ink);
+  background: var(--primary);
   color: var(--paper);
 }
 
@@ -825,9 +863,9 @@ input {
 }
 
 .direction-card.active {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 1px var(--ink);
-  color: var(--ink);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+  color: var(--primary);
 }
 
 .loading {
@@ -856,7 +894,7 @@ input {
   width: 40%;
   height: 100%;
   border-radius: 2px;
-  background: var(--ink);
+  background: var(--primary);
   animation: slide 1.2s ease-in-out infinite;
 }
 
@@ -875,12 +913,15 @@ input {
   display: flex;
   flex-direction: column;
   background: #0a0a0a;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .camera-frame {
   position: relative;
   flex: 1;
+  min-height: 0;
+  max-height: calc(100dvh - 180px);
   overflow: hidden;
 }
 
@@ -997,7 +1038,7 @@ input {
 .avg-bar-fill {
   height: 100%;
   border-radius: 4px;
-  background: var(--ink);
+  background: var(--secondary);
   transition: width 0.6s ease-out;
 }
 
@@ -1053,8 +1094,8 @@ input {
 }
 
 .exercise-check.done {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--secondary);
+  border-color: var(--secondary);
   color: var(--paper);
 }
 
@@ -1107,12 +1148,12 @@ input {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
   transition: background 0.15s ease;
 }
 
 .set-dot.filled {
-  background: var(--ink);
+  background: var(--primary);
 }
 
 .steps-list {
@@ -1128,6 +1169,36 @@ input {
   color: var(--ink);
 }
 
+.player-steps {
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  counter-reset: step;
+  list-style: none;
+}
+
+.player-steps li {
+  position: relative;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ink);
+  padding-left: 10px;
+}
+
+.player-steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: -22px;
+  top: 3px;
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--ink-faint);
+  line-height: 1;
+}
+
 .tip-box {
   font-size: 13.5px;
   line-height: 1.7;
@@ -1141,7 +1212,8 @@ input {
   line-height: 1.7;
   padding: 13px 15px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--warning);
+  color: var(--warning);
 }
 
 .guide-list {
@@ -1151,6 +1223,163 @@ input {
   gap: 6px;
   font-size: 13.5px;
   color: var(--ink-soft);
+}
+
+/* ---------- 코칭 — 루틴 진행률 ---------- */
+.routine-progress-wrap {
+  margin: 10px 22px 0;
+}
+
+.routine-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--paper-dim);
+  overflow: hidden;
+}
+
+.routine-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--secondary);
+  transition: width 0.5s ease-out;
+}
+
+/* ---------- 코칭 — 운동 행 아코디언 ---------- */
+.exercise-row-wrap {
+  border-bottom: 1px solid var(--line);
+}
+
+.exercise-row-wrap:last-child {
+  border-bottom: none;
+}
+
+/* 기존 exercise-row의 border-bottom을 래퍼로 이동했으므로 row 자체는 제거 */
+.exercise-row-wrap .exercise-row {
+  border-bottom: none;
+}
+
+.exercise-row-wrap.ex-done .exercise-info .heading {
+  color: var(--ink-faint);
+}
+
+.ex-category {
+  margin-top: 1px;
+  font-size: 11.5px;
+}
+
+.ex-chevron {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  transition: transform 0.2s ease;
+}
+
+.ex-preview {
+  padding: 0 0 18px 46px;
+}
+
+.ex-preview-steps {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.ex-preview-steps li::marker {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ex-preview-caution {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  line-height: 1.55;
+}
+
+.ex-start-btn {
+  height: 44px;
+  font-size: 13.5px;
+}
+
+/* ---------- 전체 자세 교정 프로그램 ---------- */
+.fullprog-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.fullprog-block + .fullprog-block {
+  border-top: 1px solid var(--line);
+}
+
+.fullprog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 16px 18px;
+  gap: 12px;
+  transition: background 0.15s ease;
+}
+
+.fullprog-header:hover {
+  background: var(--paper-dim);
+}
+
+.fullprog-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.fullprog-items {
+  border-top: 1px solid var(--line);
+  background: var(--paper-dim);
+}
+
+.fullprog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 18px;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s ease;
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+.fullprog-item:last-child {
+  border-bottom: none;
+}
+
+.fullprog-item:hover {
+  background: var(--paper);
+}
+
+.fullprog-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fullprog-item .heading {
+  color: var(--ink);
+}
+
+.fullprog-item.ex-done .heading {
+  color: var(--ink-faint);
 }
 
 /* ---------- 모션 ---------- */
@@ -1175,3 +1404,283 @@ input {
     transition: none !important;
   }
 }
+
+/* ---------- 아웃바디 리포트 ---------- */
+
+/* 1. 종합 대시보드 — 실제 나이 vs 체형 나이 */
+.age-compare {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 0 2px;
+}
+
+.age-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-width: 92px;
+}
+
+.age-cap {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.age-val {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* 차이값은 색이 아닌 위치·라벨로 강조 (DESIGN.md: 숫자가 주인공) */
+.age-diff {
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.age-arrow {
+  font-size: 20px;
+  color: var(--ink-faint);
+  padding-top: 14px;
+}
+
+.report-comment {
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* 2. 자세 시각화 — 정면/측면 오버레이 선 + 사이드 컴팩트 각도 */
+.posture-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 정면/측면 2개 프레임 */
+.overlay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.overlay-cell {
+  position: relative;
+  aspect-ratio: 3 / 5;
+  background: #0a0a0a;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.overlay-cell-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  opacity: 0.85;
+  z-index: 2;
+}
+
+.skel-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 위험 부위 강조 — 토큰 색(primary/warning) */
+.skel-heat-bad {
+  stroke: var(--primary);
+}
+
+.skel-heat-caution {
+  stroke: var(--warning);
+}
+
+.skel-heat {
+  animation: heat-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes heat-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 사이드 컴팩트 각도 칩 — 부위명 + 각도만 */
+.angle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.angle-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.angle-chip-name {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-soft);
+}
+
+.angle-chip-value {
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+/* 정상=옅게, 주의/교정=강조 */
+.angle-chip--caution {
+  border-color: var(--warning);
+}
+
+.angle-chip--caution .angle-chip-value {
+  color: var(--warning);
+}
+
+.angle-chip--bad {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.angle-chip--bad .angle-chip-name,
+.angle-chip--bad .angle-chip-value {
+  color: var(--paper);
+}
+
+/* 3. 근육 불균형 — 단축 ↔ 약화 양방향 */
+.muscle-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 14px;
+}
+
+.muscle-col .heading {
+  margin-bottom: 2px;
+}
+
+.muscle-col .caption {
+  margin-bottom: 10px;
+}
+
+.muscle-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.muscle-chip {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+/* 단축: 강한 채움(시급) / 약화: 아웃라인 — 색이 아닌 채움 강도로 구분 */
+.muscle-chip--tight {
+  background: var(--primary);
+  color: var(--paper);
+}
+
+.muscle-chip--weak {
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.muscle-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  height: 100%;
+  font-size: 16px;
+  color: var(--ink-faint);
+}
+
+/* 4. 미래 위험 예측 — 세그먼트 탭 + 타임라인 */
+.timeline-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--paper-dim);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.timeline-tab {
+  flex: 1;
+  height: 38px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-faint);
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.timeline-tab.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.timeline {
+  position: relative;
+  margin-left: 5px;
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 8px 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -23px;
+  top: 14px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--primary);
+  border: 2px solid var(--paper);
+}
+
+/* 현재 시점은 위험이 아닌 중립 — 채움을 비운다 */
+.timeline-dot.is-now {
+  background: var(--paper);
+  border: 2px solid var(--secondary);
+}
+
+.timeline-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+

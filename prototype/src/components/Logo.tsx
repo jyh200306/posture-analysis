@@ -8,7 +8,7 @@ export function Logo({ size = 26, withText = true }: Props) {
   return (
     <span className="logo">
       <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-        <rect x="1" y="1" width="26" height="26" rx="8" fill="currentColor" />
+        <rect x="1" y="1" width="26" height="26" rx="8" fill="var(--primary)" />
         <circle cx="14" cy="8.2" r="2.6" fill="var(--paper)" />
         <path
           d="M14 12.4v7.4"

@@ -1,0 +1,25 @@
+{
+  "name": "워크모션",
+  "short_name": "워크모션",
+  "description": "사진 한 장으로 자세를 측정하고 맞춤 교정 루틴으로 매일 관리하는 자세 코칭 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF6EF",
+  "theme_color": "#D85A30",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -79,6 +79,8 @@ export function Result({
         {metricKeys
           .filter((key) => result.metrics[key]!.level !== 'good')
           .sort((a, b) => result.metrics[a]!.score - result.metrics[b]!.score)
+          // 한 번에 너무 많은 피드백을 주지 않도록 점수가 낮은 순으로 최대 3개만 노출
+          .slice(0, 3)
           .map((key) => (
             <div className="feedback-area" key={key}>
               <div className="feedback-area-head">

@@ -1,12 +1,13 @@
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 
-export type Tab = 'home' | 'analyze' | 'coach' | 'history';
+export type Tab = 'home' | 'analyze' | 'report' | 'coach' | 'history';
 
 const TABS: Array<{ id: Tab; icon: IconName; label: string }> = [
   { id: 'home', icon: 'home', label: '홈' },
   { id: 'analyze', icon: 'scan', label: '분석' },
-  { id: 'coach', icon: 'activity', label: '코칭' },
+  { id: 'report', icon: 'report', label: '리포트' },
+  { id: 'coach', icon: 'activity', label: '자세교정' },
   { id: 'history', icon: 'chart', label: '기록' },
 ];
 

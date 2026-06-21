@@ -13,6 +13,9 @@ interface MetricSpec {
   weight: number; // 종합 점수 가중치 (방향별 합 1)
 }
 
+// 주의: 아래 임계값(good/bad)과 가중치(weight)는 임상적으로 검증된 값이 아닌
+// 초기 추정치다. 실제 사진으로 테스트하며 보정해야 하며, 이 점수는 의료적
+// 진단이 아니라 회차 간 변화를 보는 참고 지표로만 사용한다.
 const SPECS: Record<MetricKey, MetricSpec> = {
   // 정면 — 좌우 균형
   shoulderTilt: { good: 2, bad: 4, weight: 0.3 },

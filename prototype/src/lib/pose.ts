@@ -44,6 +44,8 @@ export function preloadModel(): void {
 // MediaPipe BlazePose 33개 관절 중 사용하는 인덱스
 const BP = {
   nose: 0,
+  eyeOuterL: 3,
+  eyeOuterR: 6,
   earL: 7,
   earR: 8,
   shoulderL: 11,
@@ -74,6 +76,15 @@ function lerp(a: Point, b: Point, t: number): Point {
     y: a.y + (b.y - a.y) * t,
     confidence: Math.min(a.confidence, b.confidence),
   };
+}
+
+// BlazePose의 귀 랜드마크는 귀 앞 가장자리에 가깝게 찍혀, 거북목 측정의 임상 기준점인
+// tragus(귀 중앙)보다 앞쪽에 위치한다. 그대로 쓰면 목 전방 각도가 과대평가되어
+// 거북목 판정이 지나치게 엄격해진다. 눈 바깥구석→귀 방향(머리 앞→뒤)으로 귀점을
+// 조금 더 밀어 tragus에 근접시킨다. 비율은 머리 크기에 비례해 자동 조절된다.
+const TRAGUS_SHIFT = 0.25; // 눈-귀 거리의 25%만큼 뒤로 이동 — 초기 추정치
+function tragusOf(eyeOuter: Point, ear: Point): Point {
+  return lerp(eyeOuter, ear, 1 + TRAGUS_SHIFT);
 }
 
 /**
@@ -125,8 +136,9 @@ export async function detectPose(image: HTMLImageElement): Promise<PoseData | nu
     ['center_of_mass', hipMid],
   ];
 
-  const earL = pt(BP.earL);
-  const earR = pt(BP.earR);
+  // 귀 앞 가장자리 → tragus(귀 중앙)로 보정해 거북목 측정 기준을 임상 기준에 맞춘다
+  const earL = tragusOf(pt(BP.eyeOuterL), pt(BP.earL));
+  const earR = tragusOf(pt(BP.eyeOuterR), pt(BP.earR));
 
   return {
     keypoints: points.map(([label, p], id) => ({ id, label, ...p })),

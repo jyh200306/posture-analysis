@@ -58,13 +58,13 @@ export function TrendChart({ records, height = 190 }: Props) {
               ...points.map((p) => `${p.x},${p.y}`),
               `${points[points.length - 1].x},${yAt(0)}`,
             ].join(' ')}
-            fill="var(--ink)"
+            fill="var(--primary)"
             opacity={0.05}
           />
           <polyline
             points={points.map((p) => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke="var(--ink)"
+            stroke="var(--primary)"
             strokeWidth={1.8}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -74,7 +74,7 @@ export function TrendChart({ records, height = 190 }: Props) {
 
       {points.map((p, i) => (
         <g key={p.record.id}>
-          <circle cx={p.x} cy={p.y} r={3.5} fill="var(--paper)" stroke="var(--ink)" strokeWidth={1.8}>
+          <circle cx={p.x} cy={p.y} r={3.5} fill="var(--paper)" stroke="var(--primary)" strokeWidth={1.8}>
             <title>{`${formatDate(p.record.createdAt)} — ${p.record.overallScore}점`}</title>
           </circle>
           {(i % labelEvery === 0 || i === points.length - 1) && (

@@ -1459,6 +1459,23 @@ input {
   color: var(--ink-soft);
 }
 
+/* 히스토리 보기 버튼 — 대시보드 하단 */
+.report-history-btn {
+  margin-top: 6px;
+  width: 100%;
+}
+
+/* 측정 기록 없을 때 빈 상태 */
+.report-empty {
+  padding-top: 40px;
+  text-align: center;
+  align-items: center;
+}
+
+.report-empty .btn {
+  margin-top: 8px;
+}
+
 /* 2. 자세 시각화 — 정면/측면 오버레이 선 + 사이드 컴팩트 각도 */
 .posture-visual {
   display: flex;

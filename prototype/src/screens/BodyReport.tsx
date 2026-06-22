@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScoreRing } from '../components/ScoreRing';
+import type { AnalysisRecord } from '../types';
 
 /* ==========================================================================
  * AI 아웃바디 분석 리포트
@@ -29,6 +30,13 @@ export interface BodyReportData {
       forwardHeadAngle: number; // 거북목(전방머리자세) 각도(°)
       shoulderAsymmetry: ShoulderAsym;
       pelvisTilt: PelvisTiltState;
+      // 실측 기반 각도 크기(°)와 심각도 — 방향 정보가 없는 실제 기록을 위해 사용.
+      // 주어지면 각도 칩이 이 값을 그대로 표시한다(없으면 위 enum 텍스트로 폴백).
+      shoulderTiltAngle?: number;
+      shoulderLevel?: Level;
+      pelvisTiltAngle?: number;
+      pelvisLevel?: Level;
+      neckLevel?: Level;
     };
     muscles: {
       tight: string[]; // 단축·뭉친 근육
@@ -42,9 +50,14 @@ export interface BodyReportData {
 }
 
 interface Props {
-  data: BodyReportData;
+  /** 리포트 데이터. null이면 측정 기록이 없는 빈 상태를 보여준다. */
+  data: BodyReportData | null;
   /** 화면에 표시할 사용자 이름 — 주어지면 data.user.name 대신 사용 (프로필 연동) */
   userName?: string;
+  /** 측정 화면으로 이동 (빈 상태 CTA) */
+  onAnalyze?: () => void;
+  /** 히스토리(기록) 화면으로 이동 */
+  onHistory?: () => void;
 }
 
 /* ==========================================================================
@@ -137,6 +150,135 @@ function stateLevel(notBalanced: boolean): Level {
 }
 
 /* ==========================================================================
+ * 실측 기록 → 리포트 데이터 매핑 (룰 기반)
+ *
+ * 실제 측정(AnalysisRecord)은 각도 "크기"와 심각도만 담고 방향(좌/우, 전/후)은 없다.
+ * 따라서 방향 enum은 균형/중립으로 두고, 심각도(level)와 각도값으로 시각화·코멘트를 만든다.
+ * bodyAge·근육·위험은 소스 데이터가 없어 점수/지표 레벨에서 룰기반으로 산출한다(추정치).
+ * 정면/측면은 따로 촬영되므로 각각 최신 기록을 합쳐 한 리포트로 만든다.
+ * ========================================================================== */
+
+/** 측면 패턴 → 단축/약화 근육 (정적 매핑, 측정 레벨로 선택) */
+const SIDE_MUSCLE_MAP = {
+  tight: ['가슴근육(대흉근)', '상부승모근', '뒷목 근육'],
+  weak: ['등 근육(능형근)', '하부승모근', '앞목 굽힘근'],
+};
+const FRONT_MUSCLE_MAP = {
+  tight: ['한쪽 허리근육(요방형근)', '상부승모근'],
+  weak: ['중간·하부 승모근', '반대쪽 둔근'],
+};
+
+/** 지표 레벨 → 위험 문구 (정적). 측정에서 문제가 관측된 부위만 노출 */
+const RISK_MAP: Record<'neck' | 'shoulder' | 'pelvis', { year1: string[]; year3: string[] }> = {
+  neck: {
+    year1: ['만성 어깨 결림', '거북목 증후군 초기 통증'],
+    year3: ['목 디스크 위험도 증가', '만성 긴장성 두통'],
+  },
+  shoulder: {
+    year1: ['어깨 높이 차이 고착', '한쪽 어깨·목 결림'],
+    year3: ['회전근개 부담 증가', '척추 측만 경향'],
+  },
+  pelvis: {
+    year1: ['허리 피로감 증가', '골반 좌우 불균형 고착'],
+    year3: ['요통 위험 증가', '고관절 부담'],
+  },
+};
+
+/** 측정 metrics에서 특정 지표의 각도값·레벨을 꺼낸다 (없으면 null) */
+function pick(rec: AnalysisRecord | undefined, key: string): { value: number; level: Level } | null {
+  if (!rec) return null;
+  const m = (rec.metrics as Record<string, { value: number; level: Level } | undefined>)[key];
+  return m ? { value: m.value, level: m.level } : null;
+}
+
+/**
+ * 최신 정면·측면 기록을 합쳐 리포트 데이터를 만든다. 기록이 하나도 없으면 null.
+ * @param records 저장된 기록 (최신순)
+ * @param name 표시 이름
+ * @param actualAge 실제 나이 (없으면 체형 나이 비교 생략용 기본값)
+ */
+export function buildReportData(
+  records: AnalysisRecord[],
+  name: string,
+  actualAge = 30,
+): BodyReportData | null {
+  const latestSide = records.find((r) => r.direction === 'side');
+  const latestFront = records.find((r) => r.direction === 'front');
+  if (!latestSide && !latestFront) return null;
+
+  // 종합 점수 — 두 방향 평균(있는 것만)
+  const scores = [latestSide?.overallScore, latestFront?.overallScore].filter(
+    (s): s is number => typeof s === 'number',
+  );
+  const totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+  // 지표 추출
+  const neck = pick(latestSide, 'neckForward');
+  const rounded = pick(latestSide, 'roundedUpper');
+  const shoulder = pick(latestFront, 'shoulderTilt');
+  const pelvis = pick(latestFront, 'pelvisTilt');
+
+  const neckLevel: Level = neck?.level ?? 'good';
+  const shoulderLevel: Level = shoulder?.level ?? 'good';
+  const pelvisLevel: Level = pelvis?.level ?? 'good';
+
+  // 패턴 — 측면 거북목/굽은등 우선, 아니면 정면 불균형, 아니면 균형
+  const postureType: PostureType =
+    neckLevel !== 'good' || (rounded && rounded.level !== 'good')
+      ? 'UPPER_CROSSED'
+      : pelvisLevel !== 'good'
+        ? 'LOWER_CROSSED'
+        : 'BALANCED';
+
+  // 근육 — 패턴에 따라 정적 매핑, 문제 없으면 빈 배열
+  const muscles =
+    postureType === 'UPPER_CROSSED'
+      ? SIDE_MUSCLE_MAP
+      : postureType === 'LOWER_CROSSED'
+        ? FRONT_MUSCLE_MAP
+        : { tight: [], weak: [] };
+
+  // 위험 — 레벨이 good이 아닌 부위만 누적
+  const risks = { year1: [] as string[], year3: [] as string[] };
+  const addRisk = (key: 'neck' | 'shoulder' | 'pelvis', level: Level) => {
+    if (level === 'good') return;
+    risks.year1.push(...RISK_MAP[key].year1);
+    risks.year3.push(...RISK_MAP[key].year3);
+  };
+  addRisk('neck', neckLevel);
+  addRisk('shoulder', shoulderLevel);
+  addRisk('pelvis', pelvisLevel);
+  if (risks.year1.length === 0) {
+    risks.year1.push('현재 정렬을 유지하면 특별한 위험 누적은 낮게 추정됩니다');
+    risks.year3.push('정기 측정으로 변화를 지켜보세요');
+  }
+
+  // 체형 나이 — 점수가 낮을수록 실제 나이보다 높게 추정 (룰기반, 100점=실제, 50점=+10살 정도)
+  const bodyAge = Math.round(actualAge + (100 - totalScore) * 0.2);
+
+  return {
+    user: { name, actualAge },
+    analysis: {
+      totalScore,
+      bodyAge,
+      postureType,
+      metrics: {
+        forwardHeadAngle: neck?.value ?? 0,
+        shoulderAsymmetry: 'EVEN', // 방향 정보 없음 — 심각도는 level로 표현
+        pelvisTilt: 'NEUTRAL',
+        shoulderTiltAngle: shoulder?.value,
+        shoulderLevel,
+        pelvisTiltAngle: pelvis?.value,
+        pelvisLevel,
+        neckLevel,
+      },
+      muscles,
+      risks,
+    },
+  };
+}
+
+/* ==========================================================================
  * 데모용 정적 골격 좌표 (0–1 정규화)
  *
  * 실제 사진/키포인트가 없는 리포트 단독 화면을 위한 대표 골격.
@@ -204,16 +346,38 @@ const FRONT_BONES: Array<[string, string]> = [
 
 type TimelineKey = 'now' | 'year1' | 'year3';
 
-export function BodyReport({ data, userName }: Props) {
+export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
+  // 측정 기록이 없을 때 — 빈 상태 안내
+  if (!data) {
+    return (
+      <div className="screen fade-in">
+        <div className="section stack report-empty">
+          <p className="label">report · 자세 리포트</p>
+          <p className="body-strong">아직 측정 기록이 없습니다.</p>
+          <p className="caption">
+            정면·측면 사진을 촬영하면 측정 결과를 바탕으로 리포트가 생성되고, 새로 측정할 때마다
+            자동으로 갱신됩니다.
+          </p>
+          {onAnalyze && (
+            <button className="btn btn-primary" onClick={onAnalyze}>
+              자세 측정하러 가기
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const { user, analysis } = data;
   // 프로필 이름이 주어지면 그것을, 아니면 데이터의 이름을 표시
   const displayName = userName?.trim() || user.name;
   const ageDiff = analysis.bodyAge - user.actualAge;
 
-  // 위험 부위 레벨 판정 (힛맵·강조 포인트에 사용)
-  const neckLevel = forwardHeadLevel(analysis.metrics.forwardHeadAngle);
-  const shoulderLevel = stateLevel(analysis.metrics.shoulderAsymmetry !== 'EVEN');
-  const pelvisLevel = stateLevel(analysis.metrics.pelvisTilt !== 'NEUTRAL');
+  // 위험 부위 레벨 판정 — 실측 레벨이 주어지면 우선 사용, 없으면 enum/각도에서 추정
+  const met = analysis.metrics;
+  const neckLevel = met.neckLevel ?? forwardHeadLevel(met.forwardHeadAngle);
+  const shoulderLevel = met.shoulderLevel ?? stateLevel(met.shoulderAsymmetry !== 'EVEN');
+  const pelvisLevel = met.pelvisLevel ?? stateLevel(met.pelvisTilt !== 'NEUTRAL');
 
   const posture = POSTURE_LABELS[analysis.postureType];
 
@@ -253,6 +417,13 @@ export function BodyReport({ data, userName }: Props) {
         <p className="body-strong report-comment">
           {postureComment(analysis.postureType, analysis.bodyAge, user.actualAge)}
         </p>
+
+        {/* 히스토리 보기 버튼 */}
+        {onHistory && (
+          <button className="btn btn-secondary report-history-btn" onClick={onHistory}>
+            측정 기록 보기
+          </button>
+        )}
       </div>
 
       {/* ───────── 2. 자세 시각화 (정면/측면 오버레이 선 + 사이드 각도) ───────── */}
@@ -271,11 +442,19 @@ export function BodyReport({ data, userName }: Props) {
             </div>
           </div>
 
-          {/* 사이드 컴팩트 각도 — 부위명 + 각도만 */}
+          {/* 사이드 컴팩트 각도 — 부위명 + 각도만. 실측 각도가 있으면 숫자로, 없으면 enum 텍스트 */}
           <div className="angle-chips">
-            <AngleChip name="목" value={`${analysis.metrics.forwardHeadAngle}°`} level={neckLevel} />
-            <AngleChip name="어깨" value={shoulderAngleText(analysis.metrics.shoulderAsymmetry)} level={shoulderLevel} />
-            <AngleChip name="골반" value={pelvisAngleText(analysis.metrics.pelvisTilt)} level={pelvisLevel} />
+            <AngleChip name="목" value={`${met.forwardHeadAngle}°`} level={neckLevel} />
+            <AngleChip
+              name="어깨"
+              value={met.shoulderTiltAngle != null ? `${met.shoulderTiltAngle}°` : shoulderAngleText(met.shoulderAsymmetry)}
+              level={shoulderLevel}
+            />
+            <AngleChip
+              name="골반"
+              value={met.pelvisTiltAngle != null ? `${met.pelvisTiltAngle}°` : pelvisAngleText(met.pelvisTilt)}
+              level={pelvisLevel}
+            />
           </div>
         </div>
       </div>
@@ -285,40 +464,46 @@ export function BodyReport({ data, userName }: Props) {
         <p className="label">muscle · 근육 장력 불균형</p>
         <p className="body-strong">{posture.summary}</p>
 
-        <div className="muscle-grid">
-          <div className="muscle-col">
-            <p className="heading">단축·뭉침</p>
-            <p className="caption">짧아져 당기는 근육</p>
-            <div className="muscle-chips">
-              {analysis.muscles.tight.map((m) => (
-                <span className="muscle-chip muscle-chip--tight" key={m}>
-                  {m}
-                </span>
-              ))}
+        {analysis.muscles.tight.length === 0 && analysis.muscles.weak.length === 0 ? (
+          <p className="caption">측정된 지표가 균형 범위라, 두드러진 장력 불균형은 관측되지 않았습니다.</p>
+        ) : (
+          <>
+            <div className="muscle-grid">
+              <div className="muscle-col">
+                <p className="heading">단축·뭉침</p>
+                <p className="caption">짧아져 당기는 근육</p>
+                <div className="muscle-chips">
+                  {analysis.muscles.tight.map((m) => (
+                    <span className="muscle-chip muscle-chip--tight" key={m}>
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="muscle-divider" aria-hidden>
+                <span>↔</span>
+              </div>
+
+              <div className="muscle-col">
+                <p className="heading">약화·늘어남</p>
+                <p className="caption">힘을 잃은 근육</p>
+                <div className="muscle-chips">
+                  {analysis.muscles.weak.map((m) => (
+                    <span className="muscle-chip muscle-chip--weak" key={m}>
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="muscle-divider" aria-hidden>
-            <span>↔</span>
-          </div>
-
-          <div className="muscle-col">
-            <p className="heading">약화·늘어남</p>
-            <p className="caption">힘을 잃은 근육</p>
-            <div className="muscle-chips">
-              {analysis.muscles.weak.map((m) => (
-                <span className="muscle-chip muscle-chip--weak" key={m}>
-                  {m}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <p className="caption">
-          체형 변화의 근본 원인은 근육의 장력 불균형입니다. 짧아진 쪽은 풀어 주고 약해진 쪽은 깨우는
-          것이 교정의 핵심입니다.
-        </p>
+            <p className="caption">
+              체형 변화의 근본 원인은 근육의 장력 불균형입니다. 짧아진 쪽은 풀어 주고 약해진 쪽은 깨우는
+              것이 교정의 핵심입니다.
+            </p>
+          </>
+        )}
       </div>
 
       {/* ───────── 4. 미래 위험 예측 (탭 전환) ───────── */}
@@ -535,27 +720,3 @@ function RiskTimeline({ risks }: { risks: BodyReportData['analysis']['risks'] })
     </div>
   );
 }
-
-/* ---------- 데모용 mock 데이터 ---------- */
-
-export const MOCK_BODY_REPORT: BodyReportData = {
-  user: { name: '김운동', actualAge: 30 },
-  analysis: {
-    totalScore: 72,
-    bodyAge: 33,
-    postureType: 'UPPER_CROSSED',
-    metrics: {
-      forwardHeadAngle: 18.5,
-      shoulderAsymmetry: 'LEFT_LOW',
-      pelvisTilt: 'ANTERIOR',
-    },
-    muscles: {
-      tight: ['가슴근육(대흉근)', '상부승모근', '뒷목 근육'],
-      weak: ['등 근육(능형근)', '하부승모근', '앞목 굽힘근'],
-    },
-    risks: {
-      year1: ['만성 어깨 결림', '거북목 증후군 초기 통증'],
-      year3: ['목 디스크 위험도 증가', '만성 편두통 및 긴장성 두통'],
-    },
-  },
-};

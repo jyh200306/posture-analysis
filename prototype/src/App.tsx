@@ -11,7 +11,7 @@ import { Result } from './screens/Result';
 import { Coach } from './screens/Coach';
 import { History } from './screens/History';
 import { Settings } from './screens/Settings';
-import { BodyReport, MOCK_BODY_REPORT } from './screens/BodyReport';
+import { BodyReport, buildReportData } from './screens/BodyReport';
 import { classifyPattern } from './lib/scoring';
 import { buildRoutine } from './lib/routine';
 import type { Point } from './lib/pose';
@@ -197,7 +197,14 @@ export default function App() {
         />
       )}
       {tab === 'analyze' && <Analyze onComplete={handleAnalyzed} />}
-      {tab === 'report' && <BodyReport data={MOCK_BODY_REPORT} userName={profile.name} />}
+      {tab === 'report' && (
+        <BodyReport
+          data={buildReportData(records, profile.name)}
+          userName={profile.name}
+          onAnalyze={() => setTab('analyze')}
+          onHistory={() => setTab('history')}
+        />
+      )}
       {tab === 'coach' && (
         <Coach
           routine={routine}

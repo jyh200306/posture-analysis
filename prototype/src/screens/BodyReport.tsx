@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { ScoreRing } from '../components/ScoreRing';
-import type { AnalysisRecord } from '../types';
+import { SkeletonOverlay } from '../components/SkeletonOverlay';
+import type { AnalysisRecord, Keypoint } from '../types';
+
+/** 한 방향의 실측 골격 데이터 (키포인트가 있을 때만) */
+export interface PoseView {
+  keypoints: Keypoint[];
+  ear?: { x: number; y: number; confidence: number };
+  imageWidth: number;
+  imageHeight: number;
+}
 
 /* ==========================================================================
  * AI 아웃바디 분석 리포트
@@ -47,6 +56,8 @@ export interface BodyReportData {
       year3: string[]; // 3년 방치 시 잠재 위험
     };
   };
+  /** 실측 골격 — 키포인트가 있는 방향만. 없으면 해당 칸은 "측정 필요"로 비운다 */
+  pose: { front: PoseView | null; side: PoseView | null };
 }
 
 interface Props {
@@ -191,6 +202,19 @@ function pick(rec: AnalysisRecord | undefined, key: string): { value: number; le
   return m ? { value: m.value, level: m.level } : null;
 }
 
+/** 기록에서 골격 렌더용 PoseView 추출 — 키포인트가 없으면(구 기록) null */
+function poseOf(rec: AnalysisRecord | undefined): PoseView | null {
+  if (!rec?.keypoints || rec.keypoints.length === 0 || !rec.imageWidth || !rec.imageHeight) {
+    return null;
+  }
+  return {
+    keypoints: rec.keypoints,
+    ear: rec.ear,
+    imageWidth: rec.imageWidth,
+    imageHeight: rec.imageHeight,
+  };
+}
+
 /**
  * 최신 정면·측면 기록을 합쳐 리포트 데이터를 만든다. 기록이 하나도 없으면 null.
  * @param records 저장된 기록 (최신순)
@@ -275,70 +299,12 @@ export function buildReportData(
       muscles,
       risks,
     },
+    pose: {
+      front: poseOf(latestFront),
+      side: poseOf(latestSide),
+    },
   };
 }
-
-/* ==========================================================================
- * 데모용 정적 골격 좌표 (0–1 정규화)
- *
- * 실제 사진/키포인트가 없는 리포트 단독 화면을 위한 대표 골격.
- * SkeletonOverlay.tsx의 선 스타일 규칙(흰 선 + 검정 헤일로 + 흰 점선 기준선)을 모사한다.
- * ========================================================================== */
-
-interface SkelPoint {
-  id: string;
-  x: number;
-  y: number;
-}
-
-// 측면 거북목 데모 자세 — 머리가 어깨 수직선보다 앞으로 나간 형태
-const SIDE_SKELETON: Record<string, SkelPoint> = {
-  ear: { id: 'ear', x: 0.6, y: 0.16 },
-  neck: { id: 'neck', x: 0.5, y: 0.26 },
-  shoulder: { id: 'shoulder', x: 0.46, y: 0.3 },
-  spineUpper: { id: 'spineUpper', x: 0.47, y: 0.42 },
-  hip: { id: 'hip', x: 0.5, y: 0.6 },
-  knee: { id: 'knee', x: 0.5, y: 0.78 },
-  ankle: { id: 'ankle', x: 0.5, y: 0.95 },
-};
-
-const SIDE_BONES: Array<[string, string]> = [
-  ['ear', 'neck'],
-  ['neck', 'shoulder'],
-  ['shoulder', 'spineUpper'],
-  ['spineUpper', 'hip'],
-  ['hip', 'knee'],
-  ['knee', 'ankle'],
-];
-
-// 정면 데모 자세 — 좌우 대칭 기준. 어깨/골반 기울기는 메트릭에 따라 런타임에 y를 보정한다.
-const FRONT_SKELETON: Record<string, SkelPoint> = {
-  head: { id: 'head', x: 0.5, y: 0.13 },
-  neck: { id: 'neck', x: 0.5, y: 0.26 },
-  shoulderL: { id: 'shoulderL', x: 0.36, y: 0.3 },
-  shoulderR: { id: 'shoulderR', x: 0.64, y: 0.3 },
-  hipL: { id: 'hipL', x: 0.42, y: 0.58 },
-  hipR: { id: 'hipR', x: 0.58, y: 0.58 },
-  kneeL: { id: 'kneeL', x: 0.42, y: 0.78 },
-  kneeR: { id: 'kneeR', x: 0.58, y: 0.78 },
-  ankleL: { id: 'ankleL', x: 0.42, y: 0.95 },
-  ankleR: { id: 'ankleR', x: 0.58, y: 0.95 },
-};
-
-const FRONT_BONES: Array<[string, string]> = [
-  ['head', 'neck'],
-  ['neck', 'shoulderL'],
-  ['neck', 'shoulderR'],
-  ['neck', 'hipL'],
-  ['neck', 'hipR'],
-  ['shoulderL', 'hipL'],
-  ['shoulderR', 'hipR'],
-  ['hipL', 'hipR'],
-  ['hipL', 'kneeL'],
-  ['hipR', 'kneeR'],
-  ['kneeL', 'ankleL'],
-  ['kneeR', 'ankleR'],
-];
 
 /* ==========================================================================
  * 컴포넌트
@@ -430,16 +396,10 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
       <div className="section">
         <p className="label">visual · 자세 시각화</p>
         <div className="posture-visual">
-          {/* 정면/측면 오버레이 선 — 2개만 */}
+          {/* 정면/측면 — 실제 촬영 키포인트가 있으면 골격선, 없으면 측정 안내 */}
           <div className="overlay-grid">
-            <div className="overlay-cell">
-              <span className="overlay-cell-label">정면</span>
-              <FrontSkeleton shoulder={analysis.metrics.shoulderAsymmetry} shoulderLevel={shoulderLevel} pelvisLevel={pelvisLevel} />
-            </div>
-            <div className="overlay-cell">
-              <span className="overlay-cell-label">측면</span>
-              <SideSkeleton highlight={neckLevel} />
-            </div>
+            <PoseCell label="정면" pose={data.pose.front} direction="front" onAnalyze={onAnalyze} />
+            <PoseCell label="측면" pose={data.pose.side} direction="side" onAnalyze={onAnalyze} />
           </div>
 
           {/* 사이드 컴팩트 각도 — 부위명 + 각도만. 실측 각도가 있으면 숫자로, 없으면 enum 텍스트 */}
@@ -514,142 +474,35 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
 
 /* ---------- 하위 컴포넌트 ---------- */
 
-/** 정면 데모 골격 — 어깨 비대칭을 좌우 어깨 y로 반영. SkeletonOverlay 선 스타일 모사 */
-function FrontSkeleton({
-  shoulder,
-  shoulderLevel,
-  pelvisLevel,
+/** 한 방향 골격 셀 — 실측 키포인트가 있으면 골격선, 없으면 측정 안내를 작게 표시 */
+function PoseCell({
+  label,
+  pose,
+  direction,
+  onAnalyze,
 }: {
-  shoulder: ShoulderAsym;
-  shoulderLevel: Level;
-  pelvisLevel: Level;
+  label: string;
+  pose: PoseView | null;
+  direction: 'front' | 'side';
+  onAnalyze?: () => void;
 }) {
-  // 비대칭 시 낮은 쪽 어깨를 아래로 내려 시각화 (정규화 좌표 보정)
-  const drop = 0.035;
-  const dyL = shoulder === 'LEFT_LOW' ? drop : 0;
-  const dyR = shoulder === 'RIGHT_LOW' ? drop : 0;
-  const pts: Record<string, SkelPoint> = {
-    ...FRONT_SKELETON,
-    shoulderL: { ...FRONT_SKELETON.shoulderL, y: FRONT_SKELETON.shoulderL.y + dyL },
-    shoulderR: { ...FRONT_SKELETON.shoulderR, y: FRONT_SKELETON.shoulderR.y + dyR },
-  };
-  const px = (p: SkelPoint) => ({ x: p.x * 100, y: p.y * 100 });
-  const baseX = 50; // 중앙 수직 기준선
-
   return (
-    <svg className="skel-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      {/* 중앙 수직 기준선 (흰 점선) */}
-      <line x1={baseX} y1={0} x2={baseX} y2={100} stroke="#fff" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.7} />
-
-      {/* 어깨 수평선 — 기울기 가시화 */}
-      <line
-        x1={px(pts.shoulderL).x}
-        y1={px(pts.shoulderL).y}
-        x2={px(pts.shoulderR).x}
-        y2={px(pts.shoulderR).y}
-        stroke="#fff"
-        strokeWidth={0.4}
-        strokeDasharray="2 2"
-        opacity={0.85}
-      />
-
-      {/* 골격 선 — 검정 헤일로 위에 흰 선 */}
-      {FRONT_BONES.map(([a, b]) => {
-        const p1 = px(pts[a]);
-        const p2 = px(pts[b]);
-        return (
-          <g key={`${a}-${b}`}>
-            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#000" strokeWidth={1.8} opacity={0.35} strokeLinecap="round" />
-            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#fff" strokeWidth={0.9} strokeLinecap="round" />
-          </g>
-        );
-      })}
-
-      {/* 관절점 */}
-      {Object.values(pts).map((p) => {
-        const { x, y } = px(p);
-        return <circle key={p.id} cx={x} cy={y} r={1.1} fill="#fff" stroke="#000" strokeWidth={0.4} />;
-      })}
-
-      {/* 위험 부위 강조 — 비대칭 시 낮은 어깨, 골반 경사 시 골반 */}
-      {shoulderLevel !== 'good' && shoulder !== 'EVEN' && (
-        <circle
-          cx={px(shoulder === 'LEFT_LOW' ? pts.shoulderL : pts.shoulderR).x}
-          cy={px(shoulder === 'LEFT_LOW' ? pts.shoulderL : pts.shoulderR).y}
-          r={3}
-          fill="none"
-          className={`skel-heat skel-heat-${shoulderLevel}`}
-          strokeWidth={1}
+    <div className="overlay-cell">
+      <span className="overlay-cell-label">{label}</span>
+      {pose ? (
+        <SkeletonOverlay
+          keypoints={pose.keypoints}
+          direction={direction}
+          imageWidth={pose.imageWidth}
+          imageHeight={pose.imageHeight}
+          ear={pose.ear}
         />
+      ) : (
+        <button type="button" className="overlay-cell-empty" onClick={onAnalyze} disabled={!onAnalyze}>
+          {label} 자세를 측정하세요
+        </button>
       )}
-      {pelvisLevel !== 'good' && (
-        <circle
-          cx={(px(pts.hipL).x + px(pts.hipR).x) / 2}
-          cy={(px(pts.hipL).y + px(pts.hipR).y) / 2}
-          r={3.4}
-          fill="none"
-          className={`skel-heat skel-heat-${pelvisLevel}`}
-          strokeWidth={1}
-        />
-      )}
-    </svg>
-  );
-}
-
-/** 측면 데모 골격 — SkeletonOverlay 선 스타일을 모사 */
-function SideSkeleton({ highlight }: { highlight: Level }) {
-  const pts = SIDE_SKELETON;
-  const px = (p: SkelPoint) => ({ x: p.x * 100, y: p.y * 100 });
-  // 수직 기준선: 발목을 지나는 plumb line
-  const baseX = pts.ankle.x * 100;
-
-  return (
-    <svg className="skel-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      {/* 수직 정렬 기준선 (흰 점선) */}
-      <line x1={baseX} y1={0} x2={baseX} y2={100} stroke="#fff" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.7} />
-
-      {/* 귀-어깨 정렬선 — 거북목 측정 근거 */}
-      <line
-        x1={px(pts.ear).x}
-        y1={px(pts.ear).y}
-        x2={px(pts.shoulder).x}
-        y2={px(pts.shoulder).y}
-        stroke="#fff"
-        strokeWidth={0.4}
-        strokeDasharray="2 2"
-        opacity={0.85}
-      />
-
-      {/* 골격 선 — 검정 헤일로 위에 흰 선 */}
-      {SIDE_BONES.map(([a, b]) => {
-        const p1 = px(pts[a]);
-        const p2 = px(pts[b]);
-        return (
-          <g key={`${a}-${b}`}>
-            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#000" strokeWidth={1.8} opacity={0.35} strokeLinecap="round" />
-            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#fff" strokeWidth={0.9} strokeLinecap="round" />
-          </g>
-        );
-      })}
-
-      {/* 관절점 */}
-      {Object.values(pts).map((p) => {
-        const { x, y } = px(p);
-        return <circle key={p.id} cx={x} cy={y} r={1.1} fill="#fff" stroke="#000" strokeWidth={0.4} />;
-      })}
-
-      {/* 위험 부위(귀) 강조 포인트 */}
-      {highlight !== 'good' && (
-        <circle
-          cx={px(pts.ear).x}
-          cy={px(pts.ear).y}
-          r={3.2}
-          fill="none"
-          className={`skel-heat skel-heat-${highlight}`}
-          strokeWidth={1}
-        />
-      )}
-    </svg>
+    </div>
   );
 }
 

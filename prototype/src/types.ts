@@ -79,7 +79,11 @@ export interface AnalysisResult {
   keypoints: Keypoint[];
 }
 
-/** 저장용 — 사진과 키포인트는 저장하지 않는다 */
+/**
+ * 저장용 — 사진(imageUrl)은 저장하지 않는다.
+ * 키포인트·귀 위치·이미지 비율은 리포트에서 실제 자세 골격선을 그리기 위해 저장한다.
+ * (구 기록에는 없을 수 있어 옵셔널)
+ */
 export interface AnalysisRecord {
   id: string;
   createdAt: string;
@@ -87,6 +91,13 @@ export interface AnalysisRecord {
   overallScore: number;
   pattern: string;
   metrics: Partial<Record<MetricKey, MetricScore>>;
+  /** 17개 관절점 (정규화 좌표) — 골격선 렌더링용 */
+  keypoints?: Keypoint[];
+  /** 측면 정렬선용 귀 위치 */
+  ear?: { x: number; y: number; confidence: number };
+  /** 원본 이미지 픽셀 비율 (골격 가로세로 보정용) */
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 /* ---------- 코칭 ---------- */

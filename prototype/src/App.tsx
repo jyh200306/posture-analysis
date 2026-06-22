@@ -76,6 +76,11 @@ export default function App() {
       overallScore: result.overallScore,
       pattern: result.pattern,
       metrics: result.metrics,
+      // 리포트에서 실제 자세 골격선을 그리기 위해 키포인트·귀·이미지 비율도 저장
+      keypoints: result.keypoints,
+      ear: output.ear,
+      imageWidth: output.imageWidth,
+      imageHeight: output.imageHeight,
     });
     setRecords(listRecords());
     setView({

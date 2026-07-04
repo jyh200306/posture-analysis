@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScoreRing } from '../components/ScoreRing';
-import { SkeletonOverlay } from '../components/SkeletonOverlay';
+import { AnatomyFigure } from '../components/AnatomyFigure';
+import type { AnatomyRegion, HighlightLevel } from '../components/AnatomyFigure';
 import type { AnalysisRecord, Keypoint } from '../types';
 
 /** 한 방향의 실측 골격 데이터 (키포인트가 있을 때만) */
@@ -179,6 +180,47 @@ const FRONT_MUSCLE_MAP = {
   weak: ['중간·하부 승모근', '반대쪽 둔근'],
 };
 
+/**
+ * 근육 이름 → 해부 그래픽 부위 + 심각도 판정에 쓸 지표.
+ * 강조 농도는 해당 지표의 실측 레벨을 따른다(문제 근육인데 레벨 정보가 없으면 주의 처리).
+ */
+const MUSCLE_TO_REGION: Record<
+  string,
+  { regions: AnatomyRegion[]; metric: 'neck' | 'shoulder' | 'pelvis' }
+> = {
+  '가슴근육(대흉근)': { regions: ['chest'], metric: 'neck' },
+  상부승모근: { regions: ['trapezius', 'neck-back'], metric: 'neck' },
+  '뒷목 근육': { regions: ['neck-back'], metric: 'neck' },
+  '등 근육(능형근)': { regions: ['upper-back'], metric: 'neck' },
+  하부승모근: { regions: ['trapezius', 'upper-back'], metric: 'neck' },
+  '앞목 굽힘근': { regions: ['neck-front'], metric: 'neck' },
+  '한쪽 허리근육(요방형근)': { regions: ['lower-back'], metric: 'pelvis' },
+  '중간·하부 승모근': { regions: ['trapezius', 'upper-back'], metric: 'shoulder' },
+  '반대쪽 둔근': { regions: ['gluteal'], metric: 'pelvis' },
+};
+
+/**
+ * 문제 근육 목록 + 지표 레벨 → 해부 그래픽 강조 맵.
+ * 같은 부위가 여러 근육에서 강조되면 더 심한 레벨을 유지한다.
+ */
+function buildAnatomyHighlights(
+  muscleNames: string[],
+  levels: { neck: Level; shoulder: Level; pelvis: Level },
+): Partial<Record<AnatomyRegion, HighlightLevel>> {
+  const out: Partial<Record<AnatomyRegion, HighlightLevel>> = {};
+  for (const name of muscleNames) {
+    const entry = MUSCLE_TO_REGION[name];
+    if (!entry) continue;
+    const metricLevel = levels[entry.metric];
+    // 목록에 오른 근육은 이미 문제가 관측된 근육 — good이어도 최소 주의로 표시
+    const level: HighlightLevel = metricLevel === 'bad' ? 'bad' : 'caution';
+    for (const region of entry.regions) {
+      if (out[region] !== 'bad') out[region] = level;
+    }
+  }
+  return out;
+}
+
 /** 지표 레벨 → 위험 문구 (정적). 측정에서 문제가 관측된 부위만 노출 */
 const RISK_MAP: Record<'neck' | 'shoulder' | 'pelvis', { year1: string[]; year3: string[] }> = {
   neck: {
@@ -347,6 +389,13 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
 
   const posture = POSTURE_LABELS[analysis.postureType];
 
+  // 해부 그래픽 강조 — 단축·약화 구분 없이 문제 근육 모두 빨강, 심각도로 농도 차등
+  const anatomyHighlights = buildAnatomyHighlights(
+    [...analysis.muscles.tight, ...analysis.muscles.weak],
+    { neck: neckLevel, shoulder: shoulderLevel, pelvis: pelvisLevel },
+  );
+  const hasHighlights = Object.keys(anatomyHighlights).length > 0;
+
   return (
     <div className="screen fade-in">
       {/* ───────── 1. 종합 대시보드 ───────── */}
@@ -392,15 +441,39 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
         )}
       </div>
 
-      {/* ───────── 2. 자세 시각화 (정면/측면 오버레이 선 + 사이드 각도) ───────── */}
+      {/* ───────── 2. 자세 시각화 (해부학 신체 그래픽 — 취약 근육 빨강 강조) ───────── */}
       <div className="section">
         <p className="label">visual · 자세 시각화</p>
         <div className="posture-visual">
-          {/* 정면/측면 — 실제 촬영 키포인트가 있으면 골격선, 없으면 측정 안내 */}
-          <div className="overlay-grid">
-            <PoseCell label="정면" pose={data.pose.front} direction="front" onAnalyze={onAnalyze} />
-            <PoseCell label="측면" pose={data.pose.side} direction="side" onAnalyze={onAnalyze} />
+          {/* 정면/후면/측면 전신 근육도 — 문제가 관측된 근육을 빨간색으로 표시 */}
+          <div className="anatomy-grid">
+            {(
+              [
+                { view: 'front', label: '정면' },
+                { view: 'back', label: '후면' },
+                { view: 'side', label: '측면' },
+              ] as const
+            ).map(({ view, label }) => (
+              <div className="anatomy-cell" key={view}>
+                <span className="anatomy-cell-label">{label}</span>
+                <AnatomyFigure view={view} highlights={anatomyHighlights} />
+              </div>
+            ))}
           </div>
+
+          {/* 범례 — 빨강 = 관리 필요 부위 */}
+          <p className="anatomy-legend">
+            {hasHighlights ? (
+              <>
+                <span className="anatomy-legend-swatch anatomy-legend-swatch--bad" aria-hidden />
+                시급
+                <span className="anatomy-legend-swatch anatomy-legend-swatch--caution" aria-hidden />
+                주의 — 붉게 표시된 근육이 관리가 필요한 부위입니다
+              </>
+            ) : (
+              '주요 근육이 균형 범위로 측정되었습니다.'
+            )}
+          </p>
 
           {/* 사이드 컴팩트 각도 — 부위명 + 각도만. 실측 각도가 있으면 숫자로, 없으면 enum 텍스트 */}
           <div className="angle-chips">
@@ -419,7 +492,7 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
         </div>
       </div>
 
-      {/* ───────── 3. 근육 불균형 (단축 ↔ 약화) ───────── */}
+      {/* ───────── 3. 근육 불균형 (단축 / 약화) ───────── */}
       <div className="section stack">
         <p className="label">muscle · 근육 장력 불균형</p>
         <p className="body-strong">{posture.summary}</p>
@@ -434,15 +507,11 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
                 <p className="caption">짧아져 당기는 근육</p>
                 <div className="muscle-chips">
                   {analysis.muscles.tight.map((m) => (
-                    <span className="muscle-chip muscle-chip--tight" key={m}>
+                    <span className="muscle-chip" key={m}>
                       {m}
                     </span>
                   ))}
                 </div>
-              </div>
-
-              <div className="muscle-divider" aria-hidden>
-                <span>↔</span>
               </div>
 
               <div className="muscle-col">
@@ -450,7 +519,7 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
                 <p className="caption">힘을 잃은 근육</p>
                 <div className="muscle-chips">
                   {analysis.muscles.weak.map((m) => (
-                    <span className="muscle-chip muscle-chip--weak" key={m}>
+                    <span className="muscle-chip" key={m}>
                       {m}
                     </span>
                   ))}
@@ -473,38 +542,6 @@ export function BodyReport({ data, userName, onAnalyze, onHistory }: Props) {
 }
 
 /* ---------- 하위 컴포넌트 ---------- */
-
-/** 한 방향 골격 셀 — 실측 키포인트가 있으면 골격선, 없으면 측정 안내를 작게 표시 */
-function PoseCell({
-  label,
-  pose,
-  direction,
-  onAnalyze,
-}: {
-  label: string;
-  pose: PoseView | null;
-  direction: 'front' | 'side';
-  onAnalyze?: () => void;
-}) {
-  return (
-    <div className="overlay-cell">
-      <span className="overlay-cell-label">{label}</span>
-      {pose ? (
-        <SkeletonOverlay
-          keypoints={pose.keypoints}
-          direction={direction}
-          imageWidth={pose.imageWidth}
-          imageHeight={pose.imageHeight}
-          ear={pose.ear}
-        />
-      ) : (
-        <button type="button" className="overlay-cell-empty" onClick={onAnalyze} disabled={!onAnalyze}>
-          {label} 자세를 측정하세요
-        </button>
-      )}
-    </div>
-  );
-}
 
 /** 컴팩트 부위별 각도 칩 — 부위명 + 각도값만. 위험 시 강조 */
 function AngleChip({ name, value, level }: { name: string; value: string; level: Level }) {

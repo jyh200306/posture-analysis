@@ -4,8 +4,6 @@ import { gradeOf } from '../lib/scoring';
 import type { AnalysisRecord, Direction, MetricKey } from '../types';
 import { DIRECTION_LABELS, METRIC_LABELS } from '../types';
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 interface Props {
   records: AnalysisRecord[]; // 최신순
   activeDays: number;
@@ -41,12 +39,6 @@ export function History({ records, activeDays, onAnalyze }: Props) {
   }
 
   const filtered = filter === 'all' ? records : records.filter((r) => r.direction === filter);
-  const best = Math.max(...records.map((r) => r.overallScore));
-  const recent = records.filter((r) => Date.now() - new Date(r.createdAt).getTime() < WEEK_MS);
-  const weeklyAvg =
-    recent.length > 0
-      ? Math.round(recent.reduce((sum, r) => sum + r.overallScore, 0) / recent.length)
-      : null;
 
   // 지표별 평균 — 방향에 따라 측정 항목이 다르므로 해당 지표가 있는 기록만 집계
   const averages = (Object.keys(METRIC_LABELS) as MetricKey[]).flatMap((key) => {
@@ -64,21 +56,6 @@ export function History({ records, activeDays, onAnalyze }: Props) {
       <div className="section">
         <p className="label">History</p>
         <h1 className="title">변화 기록</h1>
-      </div>
-
-      <div className="stat-row">
-        <div className="stat">
-          <p className="caption">총 측정</p>
-          <p className="stat-value num">{records.length}회</p>
-        </div>
-        <div className="stat">
-          <p className="caption">최고 점수</p>
-          <p className="stat-value num">{best}점</p>
-        </div>
-        <div className="stat">
-          <p className="caption">7일 평균</p>
-          <p className="stat-value num">{weeklyAvg === null ? '–' : `${weeklyAvg}점`}</p>
-        </div>
       </div>
 
       <div className="section">

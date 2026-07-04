@@ -194,10 +194,10 @@ input {
 /* ---------- 타이포그래피 ---------- */
 .label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   margin-bottom: 12px;
 }
 
@@ -1476,63 +1476,69 @@ input {
   margin-top: 8px;
 }
 
-/* 2. 자세 시각화 — 정면/측면 오버레이 선 + 사이드 컴팩트 각도 */
+/* 2. 자세 시각화 — 해부학 신체 그래픽(정면/후면/측면) + 사이드 컴팩트 각도 */
 .posture-visual {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* 정면/측면 2개 프레임 */
-.overlay-grid {
+/* 정면/후면/측면 3개 프레임 */
+.anatomy-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.overlay-cell {
+.anatomy-cell {
   position: relative;
-  aspect-ratio: 3 / 5;
-  background: #0a0a0a;
+  padding: 22px 6px 10px;
+  background: var(--paper-dim);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-.overlay-cell-label {
+.anatomy-cell-label {
   position: absolute;
   top: 8px;
   left: 8px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--paper);
-  opacity: 0.85;
-  z-index: 2;
+  color: var(--ink-soft);
 }
 
-/* 측정 전 빈 셀 — 작은 안내 문구 (클릭 시 측정 이동) */
-.overlay-cell-empty {
-  position: absolute;
-  inset: 0;
+.anatomy-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 범례 — 빨강 = 관리 필요, 농도로 심각도 구분 */
+.anatomy-legend {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 12px;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 11px;
   line-height: 1.5;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  background: none;
-  border: none;
-  cursor: pointer;
+  color: var(--ink-soft);
 }
 
-.overlay-cell-empty:disabled {
-  cursor: default;
+.anatomy-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.overlay-cell-empty:not(:disabled):hover {
-  color: rgba(255, 255, 255, 0.8);
+.anatomy-legend-swatch--bad {
+  background: #c63527;
+}
+
+.anatomy-legend-swatch--caution {
+  background: #e08573;
 }
 
 .skel-svg {
@@ -1612,12 +1618,12 @@ input {
   color: var(--paper);
 }
 
-/* 3. 근육 불균형 — 단축 ↔ 약화 양방향 */
+/* 3. 근육 불균형 — 단축 / 약화 두 칼럼 */
 .muscle-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 1fr;
   align-items: start;
-  gap: 8px;
+  gap: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 18px 14px;
@@ -1644,27 +1650,8 @@ input {
   padding: 7px 10px;
   border-radius: var(--radius-sm);
   text-align: center;
-}
-
-/* 단축: 강한 채움(시급) / 약화: 아웃라인 — 색이 아닌 채움 강도로 구분 */
-.muscle-chip--tight {
-  background: var(--primary);
-  color: var(--paper);
-}
-
-.muscle-chip--weak {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--line);
   color: var(--ink);
-}
-
-.muscle-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  height: 100%;
-  font-size: 16px;
-  color: var(--ink-faint);
 }
 
 /* 4. 미래 위험 예측 — 세그먼트 탭 + 타임라인 */

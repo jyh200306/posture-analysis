@@ -400,7 +400,6 @@ export function Analyze({ onComplete }: Props) {
               className={`direction-card${direction === dir ? ' active' : ''}`}
               onClick={() => setDirection(dir)}
             >
-              <DirectionFigure dir={dir} />
               <p className="heading">{DIRECTION_GUIDE[dir].title}</p>
               <p className="caption">{DIRECTION_GUIDE[dir].items}</p>
             </button>

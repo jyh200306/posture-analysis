@@ -426,27 +426,3 @@ export function Analyze({ onComplete }: Props) {
     </div>
   );
 }
-
-/** 방향 선택 카드의 미니 일러스트 — 정면/측면 선 자세 */
-function DirectionFigure({ dir }: { dir: Direction }) {
-  const stroke = { stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' as const, fill: 'none' };
-  return (
-    <svg width="44" height="62" viewBox="0 0 44 62" aria-hidden="true">
-      {dir === 'front' ? (
-        <>
-          <circle cx="22" cy="9" r="5.5" {...stroke} />
-          <path d="M22 17v20" {...stroke} />
-          <path d="M22 22l-10 9M22 22l10 9" {...stroke} />
-          <path d="M22 37l-7 19M22 37l7 19" {...stroke} />
-        </>
-      ) : (
-        <>
-          <circle cx="25" cy="9" r="5.5" {...stroke} />
-          <path d="M24 17c-2 6-3 12-2.5 20" {...stroke} />
-          <path d="M23 23l4 11" {...stroke} />
-          <path d="M21.5 37l-2 19M21.5 37l5 18" {...stroke} />
-        </>
-      )}
-    </svg>
-  );
-}
